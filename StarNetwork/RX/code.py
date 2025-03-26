@@ -2,14 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 """
-CircuitPython Feather RP2040 RFM95 Packet Receive Demo
-
-This demo waits for a "button" packet. When the first packet is received, the NeoPixel LED
-lights up red. The next packet changes it to green. The next packet changes it to blue.
-Subsequent button packets cycle through the same colors in the same order.
-
-This example is meant to be paired with the Packet Send Demo code running
-on a second Feather RP2040 RFM95 board.
+18750 Project 2
+################
+Star network: RX Node 0x01
 """
 
 import board
@@ -21,16 +16,20 @@ import adafruit_rfm9x
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 pixel.brightness = 0.5
 
-# Define the possible NeoPixel colors. You can add as many colors to this list as you like!
-# Simply follow the format shown below. Make sure you include the comma after the color tuple!
+# NeoPixel colors.
+"""
 color_values = [
-    (255, 0, 0),
-    (0, 255, 0),
-    (0, 0, 255),
+    (255, 0, 0),        # red
+    (0, 255, 0),        # green
+    (0, 0, 255),        # blue
+    (255, 255, 0),      # yellow
+    (0, 255, 255),      # cyan
+    (255, 0, 255),      # purple
+    (255, 255, 255),    # white
 ]
+"""
 
-# Define radio frequency in MHz. Must match your
-# module. Can be a value like 915.0, 433.0, etc.
+# Define radio frequency in MHz.
 RADIO_FREQ_MHZ = 915.0
 
 # Define Chip Select and Reset pins for the radio module.
@@ -39,15 +38,12 @@ RESET = digitalio.DigitalInOut(board.RFM_RST)
 
 # Initialise RFM95 radio
 rfm95 = adafruit_rfm9x.RFM9x(board.SPI(), CS, RESET, RADIO_FREQ_MHZ)
-rfm95.node = 7
-
-rfm95.high_power = False
+rfm95.node = 0x01
 
 rfm95.signal_bandwidth = 500000
 rfm95.spreading_factor = 12
 rfm95.coding_rate = 8
 
-color_index = 0
 # Wait to receive packets.
 print("Waiting for packets...")
 while True:
@@ -60,8 +56,5 @@ while True:
         print(f"({rfm95.last_snr=}, {rfm95.last_rssi=})")
         print(f"({dest=}, {node=}, {packet_id=})")
 
-        # If the received packet is b'button'...
-        if payload == b'button':
-            # ...cycle the NeoPixel LED color through the color_values list.
-            pixel.fill(color_values[color_index])
-            color_index = (color_index + 1) % len(color_values)
+        # fill led color
+        pixel.fill((payload[0], payload[1], payload[2]))
