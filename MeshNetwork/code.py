@@ -25,7 +25,6 @@ color_values = [
     (255, 255, 0),      # yellow
     (0, 255, 255),      # cyan
     (255, 0, 255),      # purple
-    (255, 255, 255),    # white
 ]
 
 # Define radio frequency in MHz
@@ -66,6 +65,8 @@ def send():
     else:
         print(f"Failed to receive ACK")
 
+    print("")
+
 def recv():
     # Look for a new packet - wait up to 5 seconds:
     print("Waiting for packets from other nodes")
@@ -73,13 +74,14 @@ def recv():
 
     # If no packet was received during the timeout then None is returned.
     if packet is not None:
-        print("Received a packet!")
         (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
-        print(f"({rfm95.last_snr=}, {rfm95.last_rssi=})")
-        print(f"({dest=}, {node=}, {packet_id=})")
+        print(f"Received packet (src={rfm95.node}, dst={rfm95.destination}) color {payload}")
+        print(f"SNR = {rfm95.last_snr}, RSSI = {rfm.last_rssi}")
 
         # fill led color
         pixel.fill((payload[0], payload[1], payload[2]))
+
+    print("")
 
 
 while True:
