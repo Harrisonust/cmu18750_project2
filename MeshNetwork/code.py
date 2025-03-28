@@ -8,6 +8,7 @@ Star Network: TX Node
 """
 
 import board
+import random
 import digitalio
 import neopixel
 import adafruit_rfm9x
@@ -57,7 +58,7 @@ def send():
     payload = bytes(color)
 
     # Debug statement
-    print(f"Sending packet (src={rfm95.node}, dst={rfm95.destination}) color ({r}, {g}, {b})")
+    print(f"Sending packet (src={rfm95.node}, dst={rfm95.destination}) color {payload}")
 
     # Send the packet and see if we get an ACK back
     if rfm95.send_with_ack(payload):
@@ -67,6 +68,7 @@ def send():
 
 def recv():
     # Look for a new packet - wait up to 5 seconds:
+    print("Waiting for packets from other nodes")
     packet = rfm95.receive(timeout=5.0, with_header=True, with_ack=True)
 
     # If no packet was received during the timeout then None is returned.
@@ -84,7 +86,7 @@ while True:
     # Based on choice, decide to TX or RX
     choice = random.randint(0, 255)
 
-    if choice < 4:
+    if choice < 128:
         # Node will transmit to a random destination
         send()
 
