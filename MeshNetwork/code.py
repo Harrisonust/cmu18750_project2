@@ -12,6 +12,7 @@ import random
 import digitalio
 import neopixel
 import adafruit_rfm9x
+import board_id
 
 ### NEOPIXEL ###
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
@@ -38,7 +39,7 @@ RESET = digitalio.DigitalInOut(board.RFM_RST)
 rfm95 = adafruit_rfm9x.RFM9x(board.SPI(), CS, RESET, RADIO_FREQ_MHZ)
 
 # Set node and LoRa parameters
-rfm95.node = 0x00
+rfm95.node = board_id.NODE_ID
 rfm95.ack_retries = 0
 
 nodes = [0x00, 0x01, 0x02, 0x03]
@@ -73,8 +74,6 @@ def send():
         print(f"Failed to receive ACK")
         num_acks_missed += 1
 
-    print("")
-
 def recv():
     # Look for a new packet - wait up to 5 seconds:
     print("Waiting for packets from other nodes")
@@ -88,8 +87,6 @@ def recv():
 
         # fill led color
         pixel.fill((payload[0], payload[1], payload[2]))
-
-    print("")
 
 
 while True:
@@ -105,3 +102,4 @@ while True:
         recv()
 
     print(f"Number of ACKs missed: {num_acks_missed} / {num_mesg_total}")
+    print("")
