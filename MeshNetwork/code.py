@@ -4,7 +4,7 @@
 """
 18750 Project 2
 ################
-Star Network: TX Node
+Star Network: Node 0x
 """
 
 import board
@@ -53,6 +53,8 @@ num_mesg_total  = 0
 num_acks_missed = 0
 
 def send():
+    global num_mesg_total
+    global num_acks_missed
     # Generate random destination
     rfm95.destination = random.choice(nodes)
 
