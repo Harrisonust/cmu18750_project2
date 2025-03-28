@@ -48,6 +48,10 @@ rfm95.signal_bandwidth = 500000
 rfm95.spreading_factor = 12
 rfm95.coding_rate = 8
 
+# Counter variable: Check number of ACKs missed
+num_mesg_total  = 0
+num_acks_missed = 0
+
 def send():
     # Generate random destination
     rfm95.destination = random.choice(nodes)
@@ -58,12 +62,14 @@ def send():
 
     # Debug statement
     print(f"Sending packet (src={rfm95.node}, dst={rfm95.destination}) color {payload}")
+    num_mesg_total += 1
 
     # Send the packet and see if we get an ACK back
     if rfm95.send_with_ack(payload):
         print("Received ACK")
     else:
         print(f"Failed to receive ACK")
+        num_acks_missed += 1
 
     print("")
 
@@ -95,3 +101,5 @@ while True:
     else:
         # Node will be ready to receive from other nodes
         recv()
+
+    print(f"Number of ACKs missed: {num_acks_missed} / {num_mesg_total")
