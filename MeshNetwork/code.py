@@ -1,3 +1,12 @@
+# SPDX-FileCopyrightText: 2023 Kattni Rembor for Adafruit Industries
+# SPDX-License-Identifier: MIT
+
+"""
+18750 Project 2
+################
+Star Network: TX Node
+"""
+
 import board
 import digitalio
 import neopixel
@@ -6,37 +15,79 @@ import adafruit_rfm9x
 ### NEOPIXEL ###
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 pixel.brightness = 0.5
-color_values = [
-    (255, 0, 0),
-    (0, 255, 0),
-    (0, 0, 255),
-]
 color_index = 0
 
-### RFM95 ###
-RFM_RADIO_FREQ_MHZ = 915.0
-RFM_CS = digitalio.DigitalInOut(board.RFM_CS)
-RFM_RST = digitalio.DigitalInOut(board.RFM_RST)
+color_values = [
+    (255, 0, 0),        # red
+    (0, 255, 0),        # green
+    (0, 0, 255),        # blue
+    (255, 255, 0),      # yellow
+    (0, 255, 255),      # cyan
+    (255, 0, 255),      # purple
+    (255, 255, 255),    # white
+]
 
-### RFM95 instance ###
-rfm95 = adafruit_rfm9x.RFM9x(board.SPI(), RFM_CS, RFM_RST, RFM_RADIO_FREQ_MHZ)
+# Define radio frequency in MHz
+RADIO_FREQ_MHZ = 915.0
 
-### PHY params ###
-rfm95.high_power = False
-rfm95.tx_power = 5
+# Define Chip Select and Reset pins for the radio module.
+CS = digitalio.DigitalInOut(board.RFM_CS)
+RESET = digitalio.DigitalInOut(board.RFM_RST)
+
+# Initialise RFM95 radio
+rfm95 = adafruit_rfm9x.RFM9x(board.SPI(), CS, RESET, RADIO_FREQ_MHZ)
+
+# Set node and LoRa parameters
+rfm95.node = 0x00
+rfm95.ack_retries = 0
+
+nodes = [0x00, 0x01, 0x02, 0x03]
+nodes.remove(rfm95.node)
+
 rfm95.signal_bandwidth = 500000
 rfm95.spreading_factor = 12
 rfm95.coding_rate = 8
 
-### Link layer params ####
-rfm95.node = 7
-rfm95.destination = 7
-rfm95.ack_retries = 5
-rfm95.ack_wait = 0.5
+def send():
+    # Generate random destination
+    rfm95.destination = random.choice(nodes)
 
-### Custom link layer params ###
-node_id_list = [1, 2, 3, 4]
-node_id = node_id_list[0]
+    # Generate random payload of colors
+    color = random.choice(color_values)
+    payload = bytes(color)
+
+    # Debug statement
+    print(f"Sending packet (src={rfm95.node}, dst={rfm95.destination}) color ({r}, {g}, {b})")
+
+    # Send the packet and see if we get an ACK back
+    if rfm95.send_with_ack(payload):
+        print("Received ACK")
+    else:
+        print(f"Failed to receive ACK")
+
+def recv():
+    # Look for a new packet - wait up to 5 seconds:
+    packet = rfm95.receive(timeout=5.0, with_header=True, with_ack=True)
+
+    # If no packet was received during the timeout then None is returned.
+    if packet is not None:
+        print("Received a packet!")
+        (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
+        print(f"({rfm95.last_snr=}, {rfm95.last_rssi=})")
+        print(f"({dest=}, {node=}, {packet_id=})")
+
+        # fill led color
+        pixel.fill((payload[0], payload[1], payload[2]))
+
 
 while True:
-    pass
+    # Based on choice, decide to TX or RX
+    choice = random.randint(0, 255)
+
+    if choice < 4:
+        # Node will transmit to a random destination
+        send()
+
+    else:
+        # Node will be ready to receive from other nodes
+        recv()
