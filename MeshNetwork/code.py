@@ -76,7 +76,7 @@ def recv():
     if packet is not None:
         (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
         print(f"Received packet (src={rfm95.node}, dst={rfm95.destination}) color {payload}")
-        print(f"SNR = {rfm95.last_snr}, RSSI = {rfm.last_rssi}")
+        print(f"SNR = {rfm95.last_snr}, RSSI = {rfm95.last_rssi}")
 
         # fill led color
         pixel.fill((payload[0], payload[1], payload[2]))
