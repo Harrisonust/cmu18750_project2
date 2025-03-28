@@ -102,4 +102,4 @@ while True:
         # Node will be ready to receive from other nodes
         recv()
 
-    print(f"Number of ACKs missed: {num_acks_missed} / {num_mesg_total")
+    print(f"Number of ACKs missed: {num_acks_missed} / {num_mesg_total}")
