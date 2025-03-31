@@ -49,7 +49,7 @@ rfm95.signal_bandwidth = 500000
 rfm95.spreading_factor = 7
 rfm95.coding_rate = 8
 rfm95.ack_retries = 0
-rfm95.ack_wait = 3
+rfm95.ack_wait = 1
 
 # Counter variables
 num_send = 0
@@ -71,7 +71,8 @@ def send():
     print(f"[TX {NODE_ID}] Sending packet from src={rfm95.node} to dst={rfm95.destination}, color={color}")
 
     # Send the packet and see if we get an ACK back
-    payload = bytes(color)
+    # TODO: use struct
+    payload = bytes(color) + b'\x55' * 247
     num_send += 1
     if rfm95.send_with_ack(payload):
         print(f"[TX {NODE_ID}] Received ACK")
@@ -84,17 +85,21 @@ def send():
 def recv():
     global num_recv
     
-    # Look for a new packet - wait up to 5 seconds:
+    # Look for a new packet
     print(f"[RX {NODE_ID}] Waiting for packets from other nodes")
-    packet = rfm95.receive(timeout=3, with_header=True, with_ack=True)
+    packet = rfm95.receive(timeout=1, with_header=True, with_ack=True)
 
     # If no packet was received during the timeout then None is returned.
     if packet is not None:
         (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
-        if len(payload) != 3:
-            print(f"[RX {NODE_ID}] Payload corrupted {payload}")
+        
+        if len(payload) != 250:
+            print(f"[RX {NODE_ID}] Payload corrupted {len(payload)=}")
+            return
 
-        color = tuple(payload)        
+        (color, _) = payload[:3], payload[3:]
+
+        color = tuple(color)        
         if color in color_values:
             color_name = color_values[color]
             print(f"[RX {NODE_ID}] Received packet from src={node} to dst={dest}, color={color}, snr = {rfm95.last_snr}, rssi = {rfm95.last_rssi}")
@@ -104,9 +109,7 @@ def recv():
             pixel.fill(color)
             num_recv += 1
         else: 
-            print(f"[RX {NODE_ID}] Payload corrupted {payload}")
-
-
+            print(f"[RX {NODE_ID}] color not in the dict {color}")
 
 while True:
     # Based on choice, decide to TX or RX
@@ -120,4 +123,5 @@ while True:
         # Node will be ready to receive from other nodes
         recv()
 
-    print(f"-----send:{num_send}/ack:{num_ack}/recv:{num_recv} -----")
+    success_rate = f"{num_ack / num_send * 100:.2f}%" if num_send != 0 else "NA"
+    print(f"----- send:{num_send}/ack:{num_ack}/recv:{num_recv}/success:{success_rate} -----")
