@@ -71,3 +71,21 @@ class RTS_CTS_NODE:
 
             print(f"[RX {self.NODE_ID}] Received packet from src={node} to dst={dest}, snr = {self.rfm95.last_snr}, rssi = {self.rfm95.last_rssi}")
             self.num_recv += 1
+
+    def send_cts(self):
+        pass
+
+    def wait_cts(self):
+        pass
+
+    def send_rts(self):
+        pass
+
+    def wait_rts(self):
+        pass
+
+    def send_ack(self):
+        pass
+    
+    def wait_ack(self):
+        pass
