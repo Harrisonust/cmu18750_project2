@@ -56,61 +56,6 @@ num_send = 0
 num_recv = 0
 num_ack  = 0
 
-def send():
-    global num_send
-    global num_ack
-    
-    # Generate random destination
-    rfm95.node = NODE_ID
-    rfm95.destination = random.choice(nodes)
-
-    # Generate random payload of colors
-    color, color_name = random.choice(list(color_values.items()))
-
-    # Debug statement
-    print(f"[TX {NODE_ID}] Sending packet from src={rfm95.node} to dst={rfm95.destination}, color={color}")
-
-    # Send the packet and see if we get an ACK back
-    # TODO: use struct
-    payload = bytes(color) + b'\x55' * 247
-    num_send += 1
-    if rfm95.send_with_ack(payload):
-        print(f"[TX {NODE_ID}] Received ACK")
-        num_ack += 1
-        print(f"[TX {NODE_ID}] @@@ Sending color {color_name} @@@")
-    else:
-        print(f"[TX {NODE_ID}] Failed to receive ACK")
-        
-
-def recv():
-    global num_recv
-    
-    # Look for a new packet
-    print(f"[RX {NODE_ID}] Waiting for packets from other nodes")
-    packet = rfm95.receive(timeout=1, with_header=True, with_ack=True)
-
-    # If no packet was received during the timeout then None is returned.
-    if packet is not None:
-        (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
-        
-        if len(payload) != 250:
-            print(f"[RX {NODE_ID}] Payload corrupted {len(payload)=}")
-            return
-
-        (color, _) = payload[:3], payload[3:]
-
-        color = tuple(color)        
-        if color in color_values:
-            color_name = color_values[color]
-            print(f"[RX {NODE_ID}] Received packet from src={node} to dst={dest}, color={color}, snr = {rfm95.last_snr}, rssi = {rfm95.last_rssi}")
-
-            # fill led color
-            print(f"[RX {NODE_ID}] @@@ Changing color to {color_name} @@@")
-            pixel.fill(color)
-            num_recv += 1
-        else: 
-            print(f"[RX {NODE_ID}] color not in the dict {color}")
-
 while True:
     # Based on choice, decide to TX or RX
     choice = random.randint(0, 100)
