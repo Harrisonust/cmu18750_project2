@@ -50,7 +50,7 @@ while True:
         node.send_rts()
         flag_cts = node.wait_cts()
 
-        # Check if we got a CTS
+        # Check return val for wait_cts()
         if flag_cts == 0x00:
             # Got a valid CTS from the dest!
 
@@ -62,12 +62,12 @@ while True:
             node.send_msg(payload)
 
         elif flag_cts == 0x01:
-            # CTS from another node, sleep
+            # Got a CTS from another node, so channel is busy
             node_sleep()
         
         else:
             # No response from dest to the RTS
-            continue
+            pass
 
     else:
         """ ---- Node is in RX mode ---- """
@@ -75,9 +75,24 @@ while True:
         # Wait for an RTS or CTS packet
         flag_rts = node.wait_rts()
 
-        
+        # Check return val for wait_rts()
+        if flag_rts == 0x00:
+            # Got a valid RTS from a node, meant for this node!
 
-        pass
+            # Send a CTS as a broadcast to all nodes, indicating channel busy
+            node.send_cts()
 
-    success_rate = f"{num_ack / num_send * 100:.2f}%" if num_send != 0 else "NA"
-    print(f"----- send:{num_send}/ack:{num_ack}/recv:{num_recv}/success:{success_rate} -----")
+            # Wait for an actual message from the RTS node
+            # Message will have an inbuilt ACK
+            node.recv_msg()
+
+        elif flag_rts == 0x01:
+            # Got a CTS from another node, so channel is busy
+            node_sleep()
+
+        else:
+            # No CTS received
+            pass
+
+    success_rate = f"{node.num_ack / node.num_send * 100:.2f}%" if node.num_send != 0 else "NA"
+    print(f"----- send:{node.num_send}/ack:{node.num_ack}/recv:{node.num_recv}/success:{success_rate} -----")
