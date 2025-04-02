@@ -9,7 +9,7 @@ from proj_config import NODE_ID
 class RTS_CTS_NODE:
     # A single RTS/CTS node for the mesh network
 
-    def __init__(self, radio_obj):
+    def __init__(self):
         # Define Chip Select and Reset pins for the radio module.
         CS = digitalio.DigitalInOut(board.RFM_CS)
         RESET = digitalio.DigitalInOut(board.RFM_RST)

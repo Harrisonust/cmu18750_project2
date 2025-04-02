@@ -13,7 +13,10 @@ import digitalio
 import neopixel
 import adafruit_rfm9x
 import time
+
 from proj_config import NODE_ID
+from rts_cts_node import RTS_CTS_NODE
+
 
 ### NEOPIXEL ###
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
