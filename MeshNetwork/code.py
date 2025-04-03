@@ -9,13 +9,11 @@ Mesh Network
 
 import board
 import random
-import digitalio
 import neopixel
-import adafruit_rfm9x
 import time
 
 from proj_config import NODE_ID
-from rts_cts_node import RTS_CTS_NODE
+from rts_cts_node import RTS_CTS_NODE, RTS_CTS_Error
 
 def node_sleep():
     pixel.fill(0, 0, 0)
@@ -51,7 +49,7 @@ while True:
         flag_cts = node.wait_cts()
 
         # Check return val for wait_cts()
-        if flag_cts == 0x00:
+        if flag_cts == RTS_CTS_Error.SUCCESS:
             # Got a valid CTS from the dest!
 
             # Generate random payload of colors
@@ -61,7 +59,7 @@ while True:
             # Send message to the dest and wait for an ack
             node.send_msg(payload)
 
-        elif flag_cts == 0x01:
+        elif flag_cts == RTS_CTS_Error.CTS_WRONG:
             # Got a CTS from another node, so channel is busy
             node_sleep()
         
@@ -76,7 +74,7 @@ while True:
         flag_rts = node.wait_rts()
 
         # Check return val for wait_rts()
-        if flag_rts == 0x00:
+        if flag_rts == RTS_CTS_Error.SUCCESS:
             # Got a valid RTS from a node, meant for this node!
 
             # Send a CTS as a broadcast to all nodes, indicating channel busy
@@ -86,7 +84,7 @@ while True:
             # Message will have an inbuilt ACK
             node.recv_msg()
 
-        elif flag_rts == 0x01:
+        elif flag_rts == RTS_CTS_Error.RTS_WRONG:
             # Got a CTS from another node, so channel is busy
             node_sleep()
 
@@ -94,5 +92,4 @@ while True:
             # No CTS received
             pass
 
-    success_rate = f"{node.num_ack / node.num_send * 100:.2f}%" if node.num_send != 0 else "NA"
-    print(f"----- send:{node.num_send}/ack:{node.num_ack}/recv:{node.num_recv}/success:{success_rate} -----")
+    print(node.get_stats())
