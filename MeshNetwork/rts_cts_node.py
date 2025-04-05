@@ -138,7 +138,7 @@ class RTS_CTS_NODE(RFM9x):
             return None
 
         # Check if the control byte for the message is correct
-        if payload[0] != self.CONTROL_MSG:
+        if payload[0].to_bytes(1) != self.CONTROL_MSG:
             self.logger.warning(f"[RX {self.node}] Received wrong payload (wrong control byte)")
             return None
 
