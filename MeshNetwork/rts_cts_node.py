@@ -99,7 +99,7 @@ class RTS_CTS_NODE(RFM9x):
             self.last_node = node
 
             # Increase num_recv
-            self.logger.info(f"[{self.node_id}] Received packet from src={node} to dst={dest}, snr = {self.rfm95.last_snr}, rssi = {self.rfm95.last_rssi}")
+            self.logger.info(f"[{self.node_id}] Received packet from src={node} to dst={dest}, snr = {self.last_snr}, rssi = {self.last_rssi}")
 
             return payload
 
