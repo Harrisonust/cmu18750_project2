@@ -95,6 +95,15 @@ class RTS_CTS_NODE(RFM9x):
             # Extract RadioHead header params
             (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
 
+            if dest != self.node_id:
+                # Packet not meant for us
+                self.logger.warning(f"[{self.node_id}] Received packet not meant for us")
+                print(dest, node, packet_id, flag)
+
+                # No packet received
+                self.last_node = 0xFF
+                return None
+
             # Save the node from this transmission as the last_node
             self.last_node = node
 
