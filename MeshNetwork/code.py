@@ -44,12 +44,13 @@ color_values = {
 
 # Function for a node sleeping when channel is busy
 def node_sleep():
+    print("[NODE_SLEEP] Sleeping for 500 ms...")
     pixel.fill(0, 0, 0)
-    time.sleep(2)
+    time.sleep(0.5)
 
 
 if __name__ == '__main__':
-        while True:
+    while True:
         # Based on choice, decide to TX or RX
         choice = random.randint(0, 100)
 
@@ -63,20 +64,27 @@ if __name__ == '__main__':
             request_node = random.choice(neighbors)
 
             node.send_rts(request_node)
-            flag_cts = node.wait_cts()
+            flag_cts = node.wait_cts(request_node)
 
-            # Check return val for wait_cts()
+            # Check return val for wait_cts
             if flag_cts == RTS_CTS_Error.SUCCESS:
                 # Got a valid CTS from the dest!
 
                 # Generate random payload of colors
                 color, color_name = random.choice(list(color_values.items()))
-                payload = bytes(color) + b'\x55' * 247
+                payload = bytes(color) + b'\x55' * 246
 
-                # Send message to the dest and wait for an ack
-                node.send_msg(payload)
+                # Payload should be 249 bytes (control byte added in class)
+                if len(payload) != 249:
+                    raise Exception("Payload not 249 bytes!")
 
-            elif flag_cts == RTS_CTS_Error.CTS_WRONG:
+                # Send message to the dest
+                node.send_msg(request_node, payload)
+
+                # Wait for ACK (class does not use send_with_ack)\
+                node.wait_ack()
+
+            elif flag_cts == RTS_CTS_Error.CTS_NOT_DEST:
                 # Got a CTS from another node, so channel is busy
                 node_sleep()
             
@@ -90,16 +98,26 @@ if __name__ == '__main__':
             # Wait for an RTS or CTS packet
             flag_rts = node.wait_rts()
 
-            # Check return val for wait_rts()
+            # Check return val for wait_rts
             if flag_rts == RTS_CTS_Error.SUCCESS:
-                # Got a valid RTS from a node, meant for this node!
+                # Got a valid RTS from tx_node
+                tx_node = node.last_node
 
-                # Send a CTS as a broadcast to all nodes, indicating channel busy
-                node.send_cts()
+                # Send a CTS as a broadcast to all nodes, indicating channel busy and specify tx_node
+                node.send_cts(tx_node)
 
-                # Wait for an actual message from the RTS node
-                # Message will have an inbuilt ACK
-                node.recv_msg()
+                # Wait for an actual message from tx_node
+                payload = node.recv_msg(tx_node)
+
+                # If no payload, go back to loop init
+                if payload is None:
+                    continue
+
+                # Get color from payload
+                print(payload[0:3])
+
+                # ACK back to tx_node
+                node.send_ack(tx_node)
 
             elif flag_rts == RTS_CTS_Error.RTS_WRONG:
                 # Got a CTS from another node, so channel is busy

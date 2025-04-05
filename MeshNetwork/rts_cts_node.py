@@ -112,8 +112,8 @@ class RTS_CTS_NODE(RFM9x):
         self.send_raw(dest=rx_node, control=self.CONTROL_MSG, payload=payload)
         self.num_send += 1
 
-    def recv_msg(self) -> bytes:
-        # Receive 250 byte message from self.last_node
+    def recv_msg(self, tx_node) -> bytes:
+        # Receive 250 byte message from tx_node
         payload = self.recv_raw()
 
         # Check for a valid payload
@@ -122,12 +122,17 @@ class RTS_CTS_NODE(RFM9x):
 
         # Check if the message length is correct
         if len(payload) != 250:
-            self.logger.warning(f"[RX {self.NODE_ID}] Received a corrupted payload (wrong len)!")
+            self.logger.warning(f"[RX {self.NODE_ID}] Received wrong payload (wrong len)!")
             return None
 
         # Check if the control byte for the message is correct
         if payload[1] != self.CONTROL_MSG:
-            self.logger.warning(f"[RX {self.NODE_ID}] Received a corrupted payload (wrong control)!")
+            self.logger.warning(f"[RX {self.NODE_ID}] Received wrong payload (wrong control)!")
+            return None
+
+        # Check if the wrong node tried transmitting to us
+        if tx_node != self.last_node:
+            self.logger.error(f"[RX {self.NODE_ID}] Node that was not cleared to send sent message")
             return None
 
         # Message passed all checks, return payload except control byte
@@ -163,7 +168,7 @@ class RTS_CTS_NODE(RFM9x):
             return RTS_CTS_Error.SUCCESS
 
         else:
-            self.logger.warning(f"[RX {self.node_id}] Wrong RTS format (wrong control byte)")
+            self.logger.warning(f"[RX {self.node_id}] Not an RTS")
             return RTS_CTS_Error.RTS_WRONG
 
     def send_cts(self, approved_node: bytes):
