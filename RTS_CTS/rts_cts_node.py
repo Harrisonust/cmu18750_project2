@@ -58,8 +58,15 @@ class RTS_CTS_NODE(RFM9x):
         self.CONTROL_ACK = b'\x03'
 
         # length definition
+        self.HEADER_LEN  = 4
         self.CONTROL_LEN = 1
         self.PAYLOAD_LEN = 249
+
+        # header definition
+        self.HEADER_DEST = 0
+        self.HEADER_NODE = 1
+        self.HEADER_PACKET_ID = 2
+        self.HEADER_FLAG = 3
 
         # Counter variables
         self.num_send = 0
@@ -67,7 +74,7 @@ class RTS_CTS_NODE(RFM9x):
         self.num_ack  = 0
 
         # Last node that transmitted to us
-        self.last_node = 0xFF
+        self.last_node = 255
 
     def send_raw(self, dest, control:bytes=None, payload:bytes=None) -> None:
         # Send any data and log to the logger
@@ -82,7 +89,7 @@ class RTS_CTS_NODE(RFM9x):
             data += payload
 
         # Log info and send
-        self.logger.info(f"[{self.node}] Sending packet from src={self.node} to dst={dest}")
+        # self.logger.info(f"[{self.node}] Sending packet from src={self.node} to dst={dest}")
         self.send(data=data, node=self.node, destination=dest)
 
     def recv_raw(self) -> bytes:
@@ -91,33 +98,18 @@ class RTS_CTS_NODE(RFM9x):
 
         if packet is None:
             # No packet received
-            self.last_node = 0xFF
-            return None
+            return None, None
 
-        if len(packet) > 4:
+        if len(packet) > self.HEADER_LEN:
             # Extract RadioHead header params
             (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
-
-            if dest != self.node and dest != 255:
-                # Packet not meant for us
-                self.logger.error(f"[{self.node}] Received packet not meant for us, meant for {dest}")
-
-                # No packet received
-                self.last_node = 0xFF
-                return None
-
-            # Save the node from this transmission as the last_node
             self.last_node = node
 
-            # Increase num_recv
-            self.logger.info(f"[{self.node}] Received packet from src={node} to dst={dest}, snr = {self.last_snr}, rssi = {self.last_rssi}")
-
-            return payload
+            return packet[:self.HEADER_LEN], packet[self.HEADER_LEN:]
 
         else:
             # Wrong packet received
-            self.last_node = 0xFF
-            return None
+            return None, None
 
     def send_msg(self, rx_node, payload) -> None:
         # Send a 250 byte message to rx_node
@@ -127,15 +119,15 @@ class RTS_CTS_NODE(RFM9x):
 
     def recv_msg(self, tx_node) -> bytes:
         # Receive 250 byte message from tx_node
-        ret = self.recv_raw()
+        header, body = self.recv_raw()
 
         # Check for a valid ret
-        if ret is None:
+        if header is None or body is None:
             self.logger.warning(f"[RX {self.node}] Message timeout")
             return None
 
         # Separate control and payload
-        control, payload = ret[:self.CONTROL_LEN], ret[self.CONTROL_LEN:]
+        control, payload = body[:1], body[1:]
 
         # Check if the message length is correct
         if len(payload) != self.PAYLOAD_LEN:
@@ -165,19 +157,19 @@ class RTS_CTS_NODE(RFM9x):
         self.logger.info(f"[RX {self.node}] Waiting for a valid RTS")
 
         # Receive the return value from recv_raw
-        ret = self.recv_raw()
+        header, body = self.recv_raw()
 
         # Check for RTS timeout
-        if ret is None:
+        if header is None or body is None:
             self.logger.warning(f"[RX {self.node}] RTS Timeout")
             return RTS_CTS_Error.RTS_TIMEOUT
 
         # Check for RTS format
-        elif len(ret) != 1:
+        elif len(body) != 1:
             self.logger.warning(f"[RX {self.node}] Wrong RTS format (wrong len)")
             return RTS_CTS_Error.RTS_WRONG
         
-        control = ret
+        control, payload = body[:1], body[1:]
 
         # Check for RTS control byte
         if control == self.CONTROL_RTS:
@@ -196,22 +188,24 @@ class RTS_CTS_NODE(RFM9x):
     def wait_cts(self, request_node) -> RTS_CTS_Error:
         # Receive a valid CTS from the node we sent an RTS to
         self.logger.info(f"[TX {self.node}] Waiting for valid CTS from {request_node}")
-        ret = self.recv_raw()
+        header, body = self.recv_raw()
 
         # Check for CTS timeout
-        if ret is None:
+        if header is None or body is None:
             self.logger.warning(f"[TX {self.node}] CTS timeout")
             return RTS_CTS_Error.CTS_TIMEOUT
 
-        elif len(ret) != 2:
+        elif len(body) != 2:
             self.logger.warning(f"[TX {self.node}] Wrong CTS format (wrong len)")
             return RTS_CTS_Error.CTS_WRONG
 
+        control, payload = body[:2], body[2:]
+
         # In ret, control1 is control byte, control2 is node that is clear to send
-        control1 = ret[0].to_bytes(1)
+        control1 = control[0].to_bytes(1)
 
         # No bytes conversion, ret is an int list
-        control2 = ret[1]
+        control2 = control[1]
 
         # Check for CTS control byte and specified node in CTS
         if control1 == self.CONTROL_CTS and control2 == self.node:
@@ -244,19 +238,19 @@ class RTS_CTS_NODE(RFM9x):
 
     def wait_ack(self) -> RTS_CTS_Error:
         # After transmitting a message, wait for an ACK
-        ret = self.recv_raw()
+        header, body = self.recv_raw()
 
         # Check for ACK timeout
-        if ret is None:
+        if header is None or body is None:
             self.logger.warning(f"TX [{self.node}] ACK timeout")
             return RTS_CTS_Error.ACK_TIMEOUT
 
         # Check for ACK format
-        elif len(ret) != 1:
+        elif len(body) != 1:
             self.logger.warning(f"[{self.node}] Wrong ACK format (wrong len)")
             return RTS_CTS_Error.ACK_WRONG
         
-        control = ret
+        control, payload = body[:1], body[1:]
 
         # Check control byte for message
         if control == self.CONTROL_ACK:
