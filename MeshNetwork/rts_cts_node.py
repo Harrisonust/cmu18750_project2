@@ -99,7 +99,7 @@ class RTS_CTS_NODE(RFM9x):
             self.last_node = node
 
             # Increase num_recv
-            self.logger.info(f"[{self.NODE_ID}] Received packet from src={node} to dst={dest}, snr = {self.rfm95.last_snr}, rssi = {self.rfm95.last_rssi}")
+            self.logger.info(f"[{self.node_id}] Received packet from src={node} to dst={dest}, snr = {self.rfm95.last_snr}, rssi = {self.rfm95.last_rssi}")
 
             return payload
 
@@ -108,7 +108,7 @@ class RTS_CTS_NODE(RFM9x):
 
     def send_msg(self, rx_node, payload) -> None:
         # Send a 250 byte message to rx_node
-        self.logger.info(f"[TX {self.NODE_ID}] Sending message to {rx_node}")
+        self.logger.info(f"[TX {self.node_id}] Sending message to {rx_node}")
         self.send_raw(dest=rx_node, control=self.CONTROL_MSG, payload=payload)
         self.num_send += 1
 
@@ -122,17 +122,17 @@ class RTS_CTS_NODE(RFM9x):
 
         # Check if the message length is correct
         if len(payload) != 250:
-            self.logger.warning(f"[RX {self.NODE_ID}] Received wrong payload (wrong len)!")
+            self.logger.warning(f"[RX {self.node_id}] Received wrong payload (wrong len)!")
             return None
 
         # Check if the control byte for the message is correct
         if payload[1] != self.CONTROL_MSG:
-            self.logger.warning(f"[RX {self.NODE_ID}] Received wrong payload (wrong control)!")
+            self.logger.warning(f"[RX {self.node_id}] Received wrong payload (wrong control)!")
             return None
 
         # Check if the wrong node tried transmitting to us
         if tx_node != self.last_node:
-            self.logger.error(f"[RX {self.NODE_ID}] Node that was not cleared to send sent message")
+            self.logger.error(f"[RX {self.node_id}] Node that was not cleared to send sent message")
             return None
 
         # Message passed all checks, return payload except control byte
@@ -141,11 +141,11 @@ class RTS_CTS_NODE(RFM9x):
 
     def send_rts(self, request_node) -> None:
         # Send an RTS packet: control byte only
-        self.logger.info(f"[TX {self.NODE_ID}] Sending RTS to {request_node}")
+        self.logger.info(f"[TX {self.node_id}] Sending RTS to {request_node}")
         self.send_raw(dest=request_node, control=self.CONTROL_RTS)
 
     def wait_rts(self) -> RTS_CTS_Error:
-        self.logger.info(f"[RX {self.NODE_ID}] Waiting for a valid RTS")
+        self.logger.info(f"[RX {self.node_id}] Waiting for a valid RTS")
 
         # Receive the return value from recv_raw
         ret = self.recv_raw()
@@ -173,12 +173,12 @@ class RTS_CTS_NODE(RFM9x):
 
     def send_cts(self, approved_node: bytes):
         # Send a broadcast CTS, specifying which node is clear to send
-        self.logger.info(f"[RX {self.NODE_ID}] Sending CTS to {approved_node}")
+        self.logger.info(f"[RX {self.node_id}] Sending CTS to {approved_node}")
         self.send_raw(dest=self.BROADCAST_ADDRESS, control=self.CONTROL_CTS+approved_node.to_bytes(1))
 
     def wait_cts(self, request_node) -> RTS_CTS_Error:
         # Receive a valid CTS from the node we sent an RTS to
-        self.logger.info(f"[TX {self.NODE_ID}] Waiting for valid CTS from {request_node}")
+        self.logger.info(f"[TX {self.node_id}] Waiting for valid CTS from {request_node}")
         ret = self.recv_raw()
 
         # Check for CTS timeout
@@ -222,7 +222,7 @@ class RTS_CTS_NODE(RFM9x):
 
     def send_ack(self, tx_node) -> None:
         # Send an ACK in response to a message
-        self.logger.info(f"[RX {self.NODE_ID}] Sending ACK to {tx_node}")
+        self.logger.info(f"[RX {self.node_id}] Sending ACK to {tx_node}")
         self.send_raw(dest=tx_node, control=self.CONTROL_ACK)
 
     def wait_ack(self) -> RTS_CTS_Error:

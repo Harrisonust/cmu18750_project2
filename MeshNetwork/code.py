@@ -45,7 +45,7 @@ color_values = {
 # Function for a node sleeping when channel is busy
 def node_sleep():
     print("[NODE_SLEEP] Sleeping for 500 ms...")
-    pixel.fill(0, 0, 0)
+    pixel.fill((0, 0, 0))
     time.sleep(0.5)
 
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             """ ---- Node is in TX mode ---- """
 
             # Set pixel to red for indicating TX
-            pixel.fill(255, 0, 0)
+            pixel.fill((255, 0, 0))
 
             # Send RTS to random dest and wait for CTS
             request_node = random.choice(neighbors)
