@@ -84,7 +84,6 @@ class RTS_CTS_NODE(RFM9x):
 
     def recv_raw(self) -> bytes:
         # Receive any data and log to the logger
-        self.logger.info(f"[{self.node_id}] Waiting for packets from other nodes")
         packet = self.receive(timeout=1, with_header=True)
 
         if packet is None:
