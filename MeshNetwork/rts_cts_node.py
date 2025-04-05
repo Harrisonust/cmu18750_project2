@@ -95,7 +95,7 @@ class RTS_CTS_NODE(RFM9x):
             # Extract RadioHead header params
             (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
 
-            if dest != self.node_id:
+            if dest != self.node_id and dest != 255:
                 # Packet not meant for us
                 self.logger.warning(f"[{self.node_id}] Received packet not meant for us")
                 print(dest, node, packet_id, flag)
