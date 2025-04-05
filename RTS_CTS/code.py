@@ -66,10 +66,7 @@ if __name__ == '__main__':
 
                 # Generate random payload of colors
                 color, color_name = random.choice(list(color_values.items()))
-                payload = bytes(color) + b'\x55' * (node.PAYLOAD_LEN - len(color))
-
-                # Payload should be 249 bytes (control byte added in class)
-                assert len(payload) == node.PAYLOAD_LEN, "payload should not 249 bytes"
+                payload = bytes(color) + b'\x55' * (node.MAX_PAYLOAD_LEN - len(color))
 
                 # Send message to the dest
                 node.send_msg(request_node, payload)

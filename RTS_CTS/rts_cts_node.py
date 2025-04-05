@@ -60,7 +60,7 @@ class RTS_CTS_NODE(RFM9x):
         # length definition
         self.HEADER_LEN  = 4
         self.CONTROL_LEN = 1
-        self.PAYLOAD_LEN = 249
+        self.MAX_PAYLOAD_LEN = 249
 
         # header definition
         self.HEADER_DEST = 0
@@ -72,6 +72,9 @@ class RTS_CTS_NODE(RFM9x):
         self.num_send = 0
         self.num_recv = 0
         self.num_ack  = 0
+        self.node_start_time = time.monotonic()
+        self.sent_bytes = 0
+        self.last_sent_bytes = 0
 
         # Last node that transmitted to us
         self.last_node = 255
@@ -116,6 +119,7 @@ class RTS_CTS_NODE(RFM9x):
         self.logger.info(f"[TX {self.node}] Sending message to {rx_node}")
         self.send_raw(dest=rx_node, control=self.CONTROL_MSG, payload=payload)
         self.num_send += 1
+        self.last_sent_bytes = len(payload)
 
     def recv_msg(self, tx_node) -> bytes:
         # Receive 250 byte message from tx_node
@@ -129,8 +133,7 @@ class RTS_CTS_NODE(RFM9x):
         # Separate control and payload
         control, payload = body[:1], body[1:]
 
-        # Check if the message length is correct
-        if len(payload) != self.PAYLOAD_LEN:
+        if len(payload) > self.MAX_PAYLOAD_LEN:
             self.logger.warning(f"[RX {self.node}] Received wrong payload (wrong len)")
             return None
 
@@ -255,6 +258,7 @@ class RTS_CTS_NODE(RFM9x):
         # Check control byte for message
         if control == self.CONTROL_ACK:
             self.logger.info(f"[{self.node}] Got an ACK from {self.last_node}")
+            self.sent_bytes += self.last_sent_bytes
             self.num_ack += 1
             return RTS_CTS_Error.SUCCESS
 
@@ -263,5 +267,7 @@ class RTS_CTS_NODE(RFM9x):
             return RTS_CTS_Error.ACK_WRONG
 
     def get_stats(self):
+        time_elapsed = time.monotonic() - self.node_start_time
+        throughput = self.sent_bytes * 8 / time_elapsed # in bps
         success_rate = f"{self.num_ack / self.num_send * 100:.2f}%" if self.num_send != 0 else "NA"
-        return f"----- send:{self.num_send}/ack:{self.num_ack}/recv:{self.num_recv}/success:{success_rate} -----"
+        return f"----- send:{self.num_send}/ack:{self.num_ack}/recv:{self.num_recv}/success:{success_rate}/throughput:{throughput:.2f}bps -----"
