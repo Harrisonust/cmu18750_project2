@@ -25,7 +25,7 @@ class RTS_CTS_NODE(RFM9x):
 
     def __init__(self):
         self.logger = logging.getLogger('test')
-        self.logger.setLevel(logging.ERROR)
+        self.logger.setLevel(logging.DEBUG)
         
         # Define Chip Select and Reset pins for the radio module.
         self.CS = digitalio.DigitalInOut(board.RFM_CS)
@@ -118,16 +118,17 @@ class RTS_CTS_NODE(RFM9x):
 
         # Check for a valid payload
         if payload is None:
+            self.logger.warning(f"[RX {self.node_id}] Message timeout")
             return None
 
         # Check if the message length is correct
         if len(payload) != 250:
-            self.logger.warning(f"[RX {self.node_id}] Received wrong payload (wrong len)!")
+            self.logger.warning(f"[RX {self.node_id}] Received wrong payload (wrong len)")
             return None
 
         # Check if the control byte for the message is correct
         if payload[1] != self.CONTROL_MSG:
-            self.logger.warning(f"[RX {self.node_id}] Received wrong payload (wrong control)!")
+            self.logger.warning(f"[RX {self.node_id}] Received wrong payload (wrong control byte)")
             return None
 
         # Check if the wrong node tried transmitting to us
