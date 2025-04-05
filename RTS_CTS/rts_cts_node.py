@@ -24,20 +24,20 @@ class RTS_CTS_NODE(RFM9x):
     # A single RTS/CTS node for the mesh network
 
     def __init__(self):
-        self.logger = logging.getLogger('test')
+        self.logger = logging.getLogger('RTS_CTS')
         self.logger.setLevel(logging.DEBUG)
         
         # Define Chip Select and Reset pins for the radio module.
-        self.CS = digitalio.DigitalInOut(board.RFM_CS)
-        self.RESET = digitalio.DigitalInOut(board.RFM_RST)
-        self.RADIO_FREQ_MHZ = 915.0
+        cs = digitalio.DigitalInOut(board.RFM_CS)
+        reset = digitalio.DigitalInOut(board.RFM_RST)
+        radio_freq_mhz = 915.0
 
         # Initialise RFM95 radio
-        RFM9x.__init__(self, board.SPI(), self.CS, self.RESET, self.RADIO_FREQ_MHZ)
+        RFM9x.__init__(self, board.SPI(), cs, reset, radio_freq_mhz)
 
         # Set node
         if NODE_ID is None:
-            self.logger.error("please set NODE_ID in proj_config.py")
+            self.logger.error("Please set NODE_ID in proj_config.py")
             time.sleep(0xFFFFFFFF)
 
         # self.node is internal to the driver, but also used for our logs
@@ -81,38 +81,26 @@ class RTS_CTS_NODE(RFM9x):
 
     def send_raw(self, dest, control:bytes=None, payload:bytes=None) -> None:
         # Send any data and log to the logger
-        data = b""
+        assert control, "[CRITICAL ERROR] Tried transmitting without a control byte"
 
-        # Add control byte for message
-        assert control is not None, "[CRITICAL ERROR] Tried transmitting without a control byte"
-        data += control
-
-        # Add payload for message, some messages may not need one
-        if payload is not None:
-            data += payload
+        data = control + (payload if payload else b'')
 
         # Log info and send
-        # self.logger.info(f"[{self.node}] Sending packet from src={self.node} to dst={dest}")
         self.send(data=data, node=self.node, destination=dest)
 
     def recv_raw(self) -> bytes:
         # Receive any data and log to the logger
         packet = self.receive(timeout=1, with_header=True)
 
-        if packet is None:
-            # No packet received
+        if packet is None or len(packet) <= self.HEADER_LEN:
+            # No packet received or wrong packet received
             return None, None
 
-        if len(packet) > self.HEADER_LEN:
-            # Extract RadioHead header params
-            (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
-            self.last_node = node
+        # Extract RadioHead header params
+        (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
+        self.last_node = node
 
-            return packet[:self.HEADER_LEN], packet[self.HEADER_LEN:]
-
-        else:
-            # Wrong packet received
-            return None, None
+        return packet[:self.HEADER_LEN], packet[self.HEADER_LEN:]
 
     def send_msg(self, rx_node, payload) -> None:
         # Send a 250 byte message to rx_node
@@ -123,6 +111,7 @@ class RTS_CTS_NODE(RFM9x):
 
     def recv_msg(self, tx_node) -> bytes:
         # Receive 250 byte message from tx_node
+        self.logger.info(f"[TX {self.node}] Waiting for message from {self.last_node}")
         header, body = self.recv_raw()
 
         # Check for a valid ret
@@ -241,6 +230,7 @@ class RTS_CTS_NODE(RFM9x):
 
     def wait_ack(self) -> RTS_CTS_Error:
         # After transmitting a message, wait for an ACK
+        self.logger.info(f"[TX {self.node}] Waiting for valid ACK from {self.last_node}")
         header, body = self.recv_raw()
 
         # Check for ACK timeout
@@ -269,5 +259,5 @@ class RTS_CTS_NODE(RFM9x):
     def get_stats(self):
         time_elapsed = time.monotonic() - self.node_start_time
         throughput = self.sent_bytes * 8 / time_elapsed # in bps
-        success_rate = f"{self.num_ack / self.num_send * 100:.2f}%" if self.num_send != 0 else "NA"
+        success_rate = f"{self.num_ack / self.num_send * 100:.2f}%" if self.num_send else "NA"
         return f"----- send:{self.num_send}/ack:{self.num_ack}/recv:{self.num_recv}/success:{success_rate}/throughput:{throughput:.2f}bps -----"
