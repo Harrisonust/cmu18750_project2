@@ -35,7 +35,6 @@ color_index = 0
 
 color_values = {
     (0, 255, 0):    "green",
-    (0, 0, 255):    "blue",
     (255, 255, 0):  "yellow",
     (0, 255, 255):  "cyan",
     (255, 0, 255):  "purple",
@@ -94,6 +93,7 @@ if __name__ == '__main__':
 
         else:
             """ ---- Node is in RX mode ---- """
+            pixel.fill((0, 0, 255))
 
             # Wait for an RTS or CTS packet
             flag_rts = node.wait_rts()
