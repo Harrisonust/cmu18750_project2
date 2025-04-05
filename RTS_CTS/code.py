@@ -22,12 +22,6 @@ node = RTS_CTS_NODE()
 neighbors = [0x00, 0x01, 0x02, 0x03]
 neighbors.remove(NODE_ID)
 
-# Node we are currently trying to transmit to
-request_node = 0xFF
-
-# Node currently trying to transmit to us
-receive_node = 0xFF
-
 ### NEOPIXEL ###
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 pixel.brightness = 0.5
@@ -39,12 +33,13 @@ color_values = {
     (0, 255, 255):  "cyan",
     (255, 0, 255):  "purple",
 }
+color_red = (255, 0, 0)
+color_off = (0, 0, 0)
 
-
-# Function for a node sleeping when channel is busy
+### Function for a node sleeping when channel is busy
 def node_sleep():
     print("[NODE_SLEEP] Sleeping for 500 ms...")
-    pixel.fill((0, 0, 0))
+    pixel.fill(color_off)
     time.sleep(0.5)
 
 
@@ -57,7 +52,7 @@ if __name__ == '__main__':
             """ ---- Node is in TX mode ---- """
 
             # Set pixel to red for indicating TX
-            pixel.fill((255, 0, 0))
+            pixel.fill(color_red)
 
             # Send RTS to random dest and wait for CTS
             request_node = random.choice(neighbors)
@@ -71,11 +66,10 @@ if __name__ == '__main__':
 
                 # Generate random payload of colors
                 color, color_name = random.choice(list(color_values.items()))
-                payload = bytes(color) + b'\x55' * 246
+                payload = bytes(color) + b'\x55' * (node.PAYLOAD_LEN - len(color))
 
                 # Payload should be 249 bytes (control byte added in class)
-                if len(payload) != 249:
-                    raise Exception("Payload not 249 bytes!")
+                assert len(payload) == node.PAYLOAD_LEN, "payload should not 249 bytes"
 
                 # Send message to the dest
                 node.send_msg(request_node, payload)
@@ -114,7 +108,7 @@ if __name__ == '__main__':
                     continue
 
                 # Get color from payload
-                print(payload[0:3])
+                print(payload)
 
                 # ACK back to tx_node
                 node.send_ack(tx_node)

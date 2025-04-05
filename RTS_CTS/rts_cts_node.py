@@ -2,8 +2,8 @@ import time
 import board
 import digitalio
 from adafruit_rfm9x import RFM9x
-from proj_config import NODE_ID
 import adafruit_logging as logging
+from proj_config import NODE_ID
 
 class RTS_CTS_Error():
     SUCCESS         = 0  # Success in RTS or CTS
@@ -57,6 +57,10 @@ class RTS_CTS_NODE(RFM9x):
         self.CONTROL_CTS = b'\x02'
         self.CONTROL_ACK = b'\x03'
 
+        # length definition
+        self.CONTROL_LEN = 1
+        self.PAYLOAD_LEN = 249
+
         # Counter variables
         self.num_send = 0
         self.num_recv = 0
@@ -70,10 +74,8 @@ class RTS_CTS_NODE(RFM9x):
         data = b""
 
         # Add control byte for message
-        if control is not None:
-            data += control
-        else:
-            raise Exception("[CRITICAL ERROR] Tried transmitting without a control byte")
+        assert control is not None, "[CRITICAL ERROR] Tried transmitting without a control byte"
+        data += control
 
         # Add payload for message, some messages may not need one
         if payload is not None:
@@ -125,20 +127,23 @@ class RTS_CTS_NODE(RFM9x):
 
     def recv_msg(self, tx_node) -> bytes:
         # Receive 250 byte message from tx_node
-        payload = self.recv_raw()
+        ret = self.recv_raw()
 
-        # Check for a valid payload
-        if payload is None:
+        # Check for a valid ret
+        if ret is None:
             self.logger.warning(f"[RX {self.node}] Message timeout")
             return None
 
+        # Separate control and payload
+        control, payload = ret[:self.CONTROL_LEN], ret[self.CONTROL_LEN:]
+
         # Check if the message length is correct
-        if len(payload) != 250:
+        if len(payload) != self.PAYLOAD_LEN:
             self.logger.warning(f"[RX {self.node}] Received wrong payload (wrong len)")
             return None
 
         # Check if the control byte for the message is correct
-        if payload[0].to_bytes(1) != self.CONTROL_MSG:
+        if control != self.CONTROL_MSG:
             self.logger.warning(f"[RX {self.node}] Received wrong payload (wrong control byte)")
             return None
 
@@ -149,7 +154,7 @@ class RTS_CTS_NODE(RFM9x):
 
         # Message passed all checks, return payload except control byte
         self.num_recv += 1
-        return payload[1:]
+        return payload
 
     def send_rts(self, request_node) -> None:
         # Send an RTS packet: control byte only
