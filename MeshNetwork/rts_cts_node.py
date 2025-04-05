@@ -88,6 +88,7 @@ class RTS_CTS_NODE(RFM9x):
 
         if packet is None:
             # No packet received
+            self.last_node = 0xFF
             return None
 
         if len(packet) > 4:
@@ -103,6 +104,8 @@ class RTS_CTS_NODE(RFM9x):
             return payload
 
         else:
+            # Wrong packet received
+            self.last_node = 0xFF
             return None
 
     def send_msg(self, rx_node, payload) -> None:
