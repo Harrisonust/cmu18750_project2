@@ -97,8 +97,7 @@ class RTS_CTS_NODE(RFM9x):
             return None, None
 
         # Extract RadioHead header params
-        (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
-        self.last_node = node
+        self.last_node = packet[1]
 
         return packet[:self.HEADER_LEN], packet[self.HEADER_LEN:]
 

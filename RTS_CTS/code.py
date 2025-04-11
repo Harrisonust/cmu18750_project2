@@ -27,13 +27,14 @@ pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 pixel.brightness = 0.5
 color_index = 0
 
-color_values = {
+color_map = {
     (0, 255, 0):    "green",
     (255, 255, 0):  "yellow",
     (0, 255, 255):  "cyan",
     (255, 0, 255):  "purple",
 }
 color_red = (255, 0, 0)
+color_blue = (0, 0, 255)
 color_off = (0, 0, 0)
 
 ### Function for a node sleeping when channel is busy
@@ -65,7 +66,7 @@ if __name__ == '__main__':
                 # Got a valid CTS from the dest!
 
                 # Generate random payload of colors
-                color, color_name = random.choice(list(color_values.items()))
+                color, color_name = random.choice(list(color_map.items()))
                 payload = bytes(color) + b'\x55' * (node.MAX_PAYLOAD_LEN - len(color))
 
                 # Send message to the dest
@@ -84,7 +85,7 @@ if __name__ == '__main__':
 
         else:
             """ ---- Node is in RX mode ---- """
-            pixel.fill((0, 0, 255))
+            pixel.fill(color_blue)
 
             # Wait for an RTS or CTS packet
             flag_rts = node.wait_rts()
@@ -119,3 +120,6 @@ if __name__ == '__main__':
                 pass
 
         print(node.get_stats())
+
+if __name__ == '__main__':
+    main()
