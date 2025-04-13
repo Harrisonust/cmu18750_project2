@@ -52,11 +52,13 @@ def main():
             # Node will be ready to receive from other nodes
             payload = node.recv_msg()
             if payload is not None:
+                print(payload)
+                if len(payload) < 3:
+                    continue
                 color = payload[:3]
                 pixel.fill(tuple(color))
 
         print(node.get_stats())
-        time.sleep(0.5)
         
 if __name__ == '__main__':
     main()
