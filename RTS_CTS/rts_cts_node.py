@@ -57,7 +57,7 @@ class RTS_CTS_NODE(RFM9x):
         self.CONTROL_CTS = b'\x02'
         self.CONTROL_ACK = b'\x03'
 
-        # length definition
+        # Packet length definitions
         self.HEADER_LEN  = 4
         self.CONTROL_LEN = 1
         self.MAX_PAYLOAD_LEN = 249

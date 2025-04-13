@@ -4,7 +4,7 @@
 """
 18750 Project 2
 ################
-Mesh Network
+RTS/CTS Network
 """
 
 import board
