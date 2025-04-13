@@ -52,7 +52,7 @@ class Aloha_Node(RFM9x):
         self.num_send += 1
         if self.send_with_ack(payload):
             self.logger.info(f"[TX {self.node}] Received ACK")
-            self.sent_bytes += self.MAX_PAYLOAD_LEN
+            self.sent_bytes += len(payload)
             self.num_ack += 1
         else:
             self.logger.info(f"[TX {self.node}] Failed to receive ACK")
@@ -65,7 +65,7 @@ class Aloha_Node(RFM9x):
         # If no packet was received during the timeout then None is returned.
         if packet is not None:
             (dest, node, packet_id, flag), payload = packet[:4], packet[4:]
-            if len(payload) != self.MAX_PAYLOAD_LEN:
+            if len(payload) > self.MAX_PAYLOAD_LEN:
                 self.logger.info(f"[RX {self.node}] Payload corrupted {payload}")
                 return None
             else:
