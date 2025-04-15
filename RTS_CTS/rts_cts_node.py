@@ -45,7 +45,7 @@ class RTS_CTS_NODE(RFM9x):
         self.BROADCAST_ADDRESS = 255
 
         # Set LoRa parameters
-        self.signal_bandwidth = 500000
+        self.signal_bandwidth = 125000
         self.spreading_factor = 7
         self.coding_rate = 8
         self.ack_retries = 0
