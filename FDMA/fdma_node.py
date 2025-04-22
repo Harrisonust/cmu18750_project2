@@ -7,7 +7,7 @@ from proj_config import NODE_ID
 
 class FDMA_Node(RFM9x):
     def __init__(self):
-        self.logger = logging.getLogger('RTS_CTS')
+        self.logger = logging.getLogger('FDMA')
         self.logger.setLevel(logging.DEBUG)
         
         # Define Chip Select and Reset pins for the radio module.

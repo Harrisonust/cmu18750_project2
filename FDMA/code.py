@@ -4,7 +4,7 @@
 """
 18750 Project 2
 ################
-Mesh Network
+FDMA Network
 """
 
 import board
