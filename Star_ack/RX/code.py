@@ -12,6 +12,8 @@ import digitalio
 import neopixel
 import adafruit_rfm9x
 
+from proj_config import NODE_ID
+
 # Set up NeoPixel.
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 pixel.brightness = 0.5
@@ -40,7 +42,7 @@ RESET = digitalio.DigitalInOut(board.RFM_RST)
 rfm95 = adafruit_rfm9x.RFM9x(board.SPI(), CS, RESET, RADIO_FREQ_MHZ)
 rfm95.node = 0x01
 
-rfm95.signal_bandwidth = 500000
+rfm95.signal_bandwidth = 125000
 rfm95.spreading_factor = 12
 rfm95.coding_rate = 8
 

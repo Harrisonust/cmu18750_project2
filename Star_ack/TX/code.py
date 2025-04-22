@@ -11,8 +11,9 @@ import time
 import board
 import digitalio
 import random
-
 import adafruit_rfm9x
+
+from proj_config import NODE_ID
 
 """
 color_values = [
@@ -37,11 +38,11 @@ RESET = digitalio.DigitalInOut(board.RFM_RST)
 rfm95 = adafruit_rfm9x.RFM9x(board.SPI(), CS, RESET, RADIO_FREQ_MHZ)
 
 # Set node and LoRa parameters
-rfm95.node = 0x00
+rfm95.node = NODE_ID
 rfm95.ack_retries = 0
 
-rfm95.signal_bandwidth = 500000
-rfm95.spreading_factor = 12
+rfm95.signal_bandwidth = 125000
+rfm95.spreading_factor = 7
 rfm95.coding_rate = 8
 
 def send():
